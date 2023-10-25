@@ -1,0 +1,51 @@
+{
+  "previous": {
+    "ham": [
+      "Hey, how are you?",
+      "Are you coming to the meeting?",
+      "The project deadline is approaching.",
+      "Let's catch up soon!",
+      "Your invoice is attached.",
+      "Your activity report",
+      "benefits physical activity",
+      "the importance vows",
+      "Hey, how are you?",
+      "Are you coming to the meeting?",
+      "The project deadline is approaching.",
+      "Let's catch up soon!",
+      "Your invoice is attached.",
+      "Your activity report"
+    ],
+    "spam": [
+      "Congratulations, you won a prize!",
+      "You are eligible for a loan.",
+      "Click here for a free gift.",
+      "You are the lucky winner!",
+      "You are a winner!",
+      "Amazing deals on our products.",
+      "Win a free iPhone",
+      "Congratulations, you won!",
+      "Get rich quick",
+      "Amazing weight loss",
+      "Double your income",
+      "send us your password",
+      "review our website",
+      "send your password",
+      "send us your account"
+    ]
+  },
+  "new": {
+    "ham": [
+      "The meeting is rescheduled.",
+      "Can we discuss the project?",
+      "benefits of our account",
+      "the importance of physical activity"
+    ],
+    "spam": [
+      "Win a brand new car!",
+      "Limited time offer.",
+      "renew your password",
+      "renew your vows"
+    ]
+  }
+}
