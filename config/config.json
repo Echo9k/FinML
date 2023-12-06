@@ -1,0 +1,14 @@
+{
+    "paths": {
+        "data": "../data/",
+        "data.raw": "../data/",
+        "data.interim": "../data/",
+        "data.processed": "../data/",
+        "logs": "../logs/",
+        "models": "../models/",
+        "results": "../results/",
+        "scripts": "../scripts/",
+        "src": "../src/",
+        "tests": "../tests/"
+    }
+}
