@@ -42,13 +42,13 @@ class DataDownloaderBase:
             logger.info(f"Processing data for {ticker}...")
             data = self.check_local_data(ticker)
             if data is None:
-                data = self.download_data(ticker)
+                data = self.get_data(ticker)
             if data is not None:
                 stocks_df[ticker] = data.sort_index()
         return stocks_df
 
 
-    def get_data(self, ticker: str) -> pd.DataFrame:
+    def get_data(self, tickers: str) -> pd.DataFrame:
         """Method to be implemented in subclass for downloading data for a ticker."""
         raise NotImplementedError("This method should be implemented in a subclass")
 
@@ -71,7 +71,7 @@ class VantageDataDownloader(DataDownloaderBase):
         from alpha_vantage.timeseries import TimeSeries
         return TimeSeries(key=api_key, output_format='pandas')
 
-    def get_data(self, ticker: str, data_type: str = 'daily_adjusted', save_data:bool=False) -> pd.DataFrame:
+    def get_data(self, tickers: str, data_type: str = 'daily_adjusted', save_data:bool=False) -> pd.DataFrame:
             """
             Downloads historical financial data for a given ticker symbol.
 
@@ -97,13 +97,13 @@ class VantageDataDownloader(DataDownloaderBase):
                 4  2021-01-08  132.429993  132.630005  130.229996  132.050003  131.628159  105158200         0      1
             """
             if data_type == 'daily_adjusted':
-                data = self._get_daily_adjusted_data(ticker)
+                data = self._get_daily_adjusted_data(tickers)
             elif data_type == 'daily':
-                data = self._get_daily_data(ticker)
+                data = self._get_daily_data(tickers)
             else:   
                 raise ValueError(f"Invalid data type: {data_type}")
             if save_data and data is not None:
-                self.save_data(data, ticker)
+                self.save_data(data, tickers)
             return data
 
 
@@ -145,7 +145,7 @@ class YFDataDownloader(DataDownloaderBase):
     Inherits from DataDownloaderBase and implements downloading functionality for the Yahoo Finance API.
     """
 
-    def get_data(self, ticker, start_date=None, end_date=None, interval='1d', save_data:bool=False):
+    def get_data(self, tickers, start_date=None, end_date=None, interval='1d', save_data:bool=False):
         """Downloads data for a given ticker using the Yahoo Finance API.
 
         Args:
@@ -159,9 +159,9 @@ class YFDataDownloader(DataDownloaderBase):
         """
         import yfinance as yf
         try:
-            data = yf.download(ticker, start=start_date, end=end_date, interval=interval, progress=False)
+            data = yf.download(tickers, start=start_date, end=end_date, interval=interval, progress=False)
             if save_data and data is not None:
-                self.save_data(data, ticker)
+                self.save_data(data, tickers)
             return data
         except Exception as e:
-            print(f"An error occurred while downloading data for {ticker}: {e}")
+            print(f"An error occurred while downloading data for {tickers}: {e}")

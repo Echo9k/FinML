@@ -6,3 +6,4 @@ alpha_vantage
 fastparquet
 xarray
 yfinance
+seaborn
