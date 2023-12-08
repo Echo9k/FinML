@@ -17,3 +17,21 @@ def check_local_data(data_directory, ticker):
         return pd.read_parquet(file_path)
     else:
         return None
+
+
+def ensure_data_directory(data_directory):
+    """Ensures the existence of a data directory.
+
+    Args:
+        data_directory (str): The path to the data directory.
+
+    Returns:
+        None
+
+    Raises:
+        OSError: If the directory cannot be created and does not exist.
+
+    Examples:
+        >>> ensure_data_directory('data')
+    """
+    os.makedirs(data_directory, exist_ok=True)

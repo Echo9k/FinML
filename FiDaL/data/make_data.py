@@ -4,8 +4,8 @@ import pandas as pd
 import requests
 import logging
 
-from FiDaL.utils import load_config
-from FiDaL.data.process import ensure_data_directory, clean_column_names
+from FiDaL.utils import load_config, ensure_data_directory
+from FiDaL.data.process import __clean_column_names
 
 # Initialize logging
 logging.basicConfig(level=logging.INFO)
@@ -111,7 +111,7 @@ class VantageDataDownloader(DataDownloaderBase):
         """Downloads standard daily data."""
         try:
             data, _ = self.ts.get_daily(symbol=ticker, outputsize='full')
-            data.columns = clean_column_names(data.columns)
+            data.columns = __clean_column_names(data.columns)
             return data
         except Exception as e:
             logger.error(f"Error downloading daily data for {ticker}: {e}")

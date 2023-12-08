@@ -1,13 +1,10 @@
 import seaborn as sns
-import pandas as pd
-import numpy as np
 import matplotlib.pyplot as plt
-from statsmodels.graphics.tsaplots import plot_acf
 from statsmodels.graphics.tsaplots import plot_acf, plot_pacf
 
 
 # Function to plot time series data
-def plot_time_series(df, column, title='Stock Prices Over Time', ylabel='Price'):
+def time_series(df, column, title='Stock Prices Over Time', ylabel='Price'):
     """Plots time series data for a single column."""
     plt.figure(figsize=(12, 6))
     plt.plot(df.index, df[column], label=column)
@@ -19,7 +16,7 @@ def plot_time_series(df, column, title='Stock Prices Over Time', ylabel='Price')
 
 
 # Function to plot histogram of returns
-def plot_histogram(df, column, title='Distribution of Returns', bins=50):
+def histogram(df, column, title='Distribution of Returns', bins=50):
     """Plots a histogram of the returns."""
     plt.figure(figsize=(12, 6))
     plt.hist(df[column], bins=bins, edgecolor='black')
@@ -30,7 +27,7 @@ def plot_histogram(df, column, title='Distribution of Returns', bins=50):
 
 
 # Function to plot correlation heatmap
-def plot_correlation_heatmap(df, title='Correlation Heatmap'):
+def correlation_heatmap(df, title='Correlation Heatmap'):
     """Plots a correlation heatmap."""
     plt.figure(figsize=(10, 8))
     sns.heatmap(df.corr(), annot=True, fmt=".2f", cmap='coolwarm', cbar=True)
@@ -38,8 +35,9 @@ def plot_correlation_heatmap(df, title='Correlation Heatmap'):
     plt.show()
 
 
+
 # Function to plot a scatter diagram
-def plot_scatter(df, column1, column2, title='Scatter Diagram'):
+def scatter(df, column1, column2, title='Scatter Diagram'):
     plt.figure(figsize=(10, 6))
     plt.scatter(df[column1], df[column2], alpha=0.5)
     plt.title(title)
@@ -47,7 +45,8 @@ def plot_scatter(df, column1, column2, title='Scatter Diagram'):
     plt.ylabel(column2)
     plt.show()
 
-def plot_stats(product, ax):
+
+def stats(product, ax):
     # Calculate mean and standard deviation
     mean_val = product.mean()
     std_dev = product.std()
@@ -58,7 +57,8 @@ def plot_stats(product, ax):
     ax.axhline(y=mean_val + 1.5 * std_dev, color='tab:purple', linestyle=':', label='Mean + 1.5 SD', alpha=0.7)
     ax.axhline(y=mean_val - 1.5 * std_dev, color='tab:pink', linestyle=':', label='Mean - 1.5 SD', alpha=0.7)
 
-def plot_moving_average(adj_close, volume, window_sizes, include_stats=False, log_scale=False):
+
+def moving_average(adj_close, volume, window_sizes, include_stats=False, log_scale=False):
     """
     Plots the product of adjusted close price and volume with moving averages and optional statistical lines.
 
@@ -85,7 +85,7 @@ def plot_moving_average(adj_close, volume, window_sizes, include_stats=False, lo
         ax.plot(moving_average, label=f'Moving Average ({window} days)', linewidth=1.2)
 
     if include_stats:
-        plot_stats(product, ax)
+        stats(product, ax)
     
     # Set y-axis scale
     if log_scale:
@@ -95,7 +95,8 @@ def plot_moving_average(adj_close, volume, window_sizes, include_stats=False, lo
     plt.legend()
     plt.show()
 
-def plot_adj_close_volume(data, ticker, y_log=False):
+
+def adj_close_volume(data, ticker, y_log=False):
     # Get the 'Adj Close' and 'Volume' variables for the given ticker
     adj_close = data[('Adj Close', ticker)]
     volume = data[('Volume', ticker)]
@@ -120,7 +121,7 @@ def plot_adj_close_volume(data, ticker, y_log=False):
     plt.show()
 
 
-def plot_autocorrelation(series, title, lags=40):
+def autocorrelation(series, title, lags=40):
     """
     Plots autocorrelation for a time series.
 
@@ -136,7 +137,7 @@ def plot_autocorrelation(series, title, lags=40):
     plt.show()
 
 
-def plot_partial_autocorrelation(series, title, lags=40):
+def partial_autocorrelation(series, title, lags=40):
     """
     Plots partial autocorrelation for a time series.
 
