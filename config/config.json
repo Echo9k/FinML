@@ -38,8 +38,12 @@
     "data_source": "yahoo",
     "data_source_params": {
         "tickers": [
-            "T",
-            "VZ"
+            "SNY",
+            "NESN.SW",
+            "TM",
+            "AAPL",
+            "^TNX",
+            "^NSEI"
         ],
         "start_date": "2021-01-01",
         "end_date": "2024-12-31",

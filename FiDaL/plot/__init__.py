@@ -96,26 +96,30 @@ def moving_average(adj_close, volume, window_sizes, include_stats=False, log_sca
     plt.show()
 
 
-def adj_close_volume(data, ticker, y_log=False):
-    # Get the 'Adj Close' and 'Volume' variables for the given ticker
-    adj_close = data[('Adj Close', ticker)]
-    volume = data[('Volume', ticker)]
+def adj_close_volume(data, ticker, columns:list, y_log=False, ax=None):
+    """Plot the adjusted close price and volume of a stock.
+
+    Args:
+        data (pd.DataFrame): The data to plot.
+        ticker (str): The ticker of the stock.
+        columns (list): The columns to plot.
+        y_log (bool, optional): Whether to use a logarithmic scale for the y-axis. Defaults to False.
+        ax (matplotlib.axes.Axes, optional): The axes to plot on. If not provided, a new figure and axes will be created.
+    """
+    plt.rcParams["figure.figsize"] = (5, 2)
+    data = data[ticker]
 
     # Plot the adjusted close price and volume
-    fig, ax = plt.subplots(2, 1, figsize=(15, 10))
-    ax[0].set_title(f'{ticker} Adj Close')
-    ax[0].set_ylabel('Price $')
-    if y_log:
-        ax[0].set_yscale('log')
-    ax[0].plot(adj_close, color='tab:blue', label='Adj Close', linewidth=1.5, linestyle='-', alpha=0.8)
-    ax[0].grid(True, axis='y', linestyle='--', alpha=0.5, linewidth=0.5)
+    if ax is None:
+        fig, ax = plt.subplots(len(columns), 1, figsize=(15, 5 * len(columns)))
 
-    ax[1].set_title(f'{ticker} Volume')
-    ax[1].set_ylabel('units')
-    if y_log:
-        ax[1].set_yscale('log')
-    ax[1].plot(volume, color='tab:orange', label='Volume', linewidth=.9, linestyle='-', alpha=0.8)
-    ax[1].grid(True, axis='y', linestyle='--', alpha=0.5, linewidth=0.5)
+    for i, column in enumerate(columns):
+        ax[i].set_title(f'{ticker} {column}')
+        ax[i].set_ylabel('Price $' if column.lower() in {'adj close', 'price'} else 'units')
+        if y_log:
+            ax[i].set_yscale('log')
+        ax[i].plot(data[column], color='tab:blue' if column.lower() in {'adj close', 'price'} else 'tab:orange', label=column, linewidth=1.5 if column.lower() in {'adj close', 'price'} else .9, linestyle='-', alpha=0.8)
+        ax[i].grid(True, axis='y', linestyle='--', alpha=0.5, linewidth=0.5)
 
     plt.xlabel('Date')
     plt.show()

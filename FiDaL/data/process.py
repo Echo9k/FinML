@@ -62,7 +62,7 @@ class FeatureGenerator:
     """Class for generating features from stock price data."""
 
     @staticmethod
-    def calculate_returns(data, column='Adj Close'):
+    def calculate_returns(data, column='Adj Close', log=True):
         """
         Calculate simple and logarithmic returns for all tickers in the DataFrame.
 
@@ -76,7 +76,10 @@ class FeatureGenerator:
         """
         is_multiindex = FeatureGenerator._is_multiindex(data)
         FeatureGenerator._check_column(data, column, is_multiindex)
-        return FeatureGenerator._compute_returns(data, column, is_multiindex)
+        return FeatureGenerator._compute_returns(data,
+                                                 column=column,
+                                                 log=log,
+                                                 is_multiindex=is_multiindex)
 
     @staticmethod
     def _is_multiindex(data):
@@ -92,20 +95,21 @@ class FeatureGenerator:
             raise ValueError(f"'{column}' column not found in the DataFrame")
 
     @staticmethod
-    def _compute_returns(data, column, is_multiindex):
+    def _compute_returns(data, column, log, is_multiindex):
         """Compute and insert simple and logarithmic returns."""
         if is_multiindex:
             adj_close = data[column]
             simple_returns = adj_close / adj_close.shift(1) - 1
-            log_returns = np.log(adj_close / adj_close.shift(1))
+            if log: log_returns = np.log(adj_close / adj_close.shift(1))
 
-            for ticker in adj_close.columns:
+            for ticker in adj_close.columns: 
                 data[('returns', ticker)] = simple_returns[ticker]
-                data[('log_returns', ticker)] = log_returns[ticker]
+                if log: data[('log_returns', ticker)] = log_returns[ticker]
+                
         else:
             adj_close = data[column]
             data['returns'] = adj_close / adj_close.shift(1) - 1
-            data['log_returns'] = np.log(adj_close / adj_close.shift(1))
+            if log: data['log_returns'] = np.log(adj_close / adj_close.shift(1))
 
         return data.sort_index(axis=1) if is_multiindex else data
 
