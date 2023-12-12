@@ -1,5 +1,6 @@
 import cvxpy as cvx
 import numpy as np
+from scipy.optimize import minimize
 
 
 class PortfolioConstraints:
@@ -26,8 +27,87 @@ class PortfolioConstraints:
     @staticmethod
     def max_stock_percentage(max_stock_percentage):
         return lambda weights: cvx.sum(weights) <= max_stock_percentage
+    
+    @staticmethod
+    def check_sum(weights, adds_to=1):
+        """
+        Check if the sum of the weights is equal to 1.
+        
+        Parameters:
+        weights (array-like): The weights to be checked.
+        
+        Returns:
+        float: The difference between the sum of the weights and 1.
+        """
+        return np.sum(weights) - adds_to
 
-def portfolio_variance(varA, varB, correlation):
+
+def portfolio_variance(cov_matrix):
+    """
+    Optimize a portfolio with multiple assets.
+
+    Parameters
+    ----------
+    cov_matrix : np.ndarray
+        Covariance matrix of the assets.
+
+    Returns
+    -------
+    optimal_weights : np.ndarray
+        Optimal weights of the assets.
+    minimized_variance : float
+        Variance of the optimized portfolio.
+    """
+    num_assets = cov_matrix.shape[0]
+    x = cvx.Variable(num_assets)
+
+    objective = cvx.Minimize(cvx.quad_form(x, cov_matrix))
+    constraints = [cvx.sum(x) == 1, x >= 0]  # No short selling
+    problem = cvx.Problem(objective, constraints)
+    problem.solve(qcp=True, solver=cvx.ECOS)
+
+    if problem.status not in [cvx.OPTIMAL, cvx.OPTIMAL_INACCURATE]:
+        raise ValueError("Optimization failed.")
+
+    minimized_variance = problem.value
+    optimal_weights = x.value
+
+    return optimal_weights, minimized_variance
+
+def portfolio_volatility(mean_returns, cov_matrix):
+    """
+    Calculates the optimal portfolio weights and minimized volatility using quadratic programming.
+
+    Parameters:
+    mean_returns (np.ndarray): An array of mean returns for each asset.
+    cov_matrix (np.ndarray): The covariance matrix of asset returns.
+
+    Returns:
+    tuple: A tuple containing the optimal portfolio weights and the minimized volatility.
+
+    Raises:
+    ValueError: If the optimization problem does not have an optimal solution.
+    """
+
+    num_assets = len(mean_returns)
+    x = cvx.Variable(num_assets)
+
+    # Objective: Minimize the square root of the quadratic form (portfolio volatility)
+    objective = cvx.Minimize(cvx.sqrt(cvx.quad_form(x, cov_matrix)))
+    constraints = [cvx.sum(x) == 1, x >= 0]  # Sum of weights equals 1, no short selling
+
+    problem = cvx.Problem(objective, constraints)
+    problem.solve(qcp=True, solver=cvx.ECOS)
+
+    if problem.status not in [cvx.OPTIMAL, cvx.OPTIMAL_INACCURATE]:
+        raise ValueError("Optimization failed. Status: " + str(problem.status))
+
+    minimized_volatility = problem.value
+    optimal_weights = x.value
+
+    return optimal_weights, minimized_volatility
+
+def optimize_twoasset_portfolio(varA, varB, correlation):
     """
     Optimize a portfolio with two assets.
 
@@ -64,56 +144,53 @@ def portfolio_variance(varA, varB, correlation):
 
     return optimal_weights, minimized_variance
 
-
-def portfolio_volatility(mean_returns, cov_matrix):
+def portfolio_annualized_performance(weights, mean_returns, cov_matrix):
     """
-    Calculates the optimal portfolio weights and minimized volatility using quadratic programming.
+    Calculate the annualized performance of a portfolio.
 
     Parameters:
-    mean_returns (numpy.ndarray): Array of mean returns for each asset.
-    cov_matrix (numpy.ndarray): Covariance matrix of asset returns.
+    weights (array-like): The weights of the assets in the portfolio.
+    mean_returns (array-like): The mean returns of the assets.
+    cov_matrix (array-like): The covariance matrix of the assets.
 
     Returns:
-    tuple: A tuple containing the optimal portfolio weights and the minimized volatility.
+    tuple: A tuple containing the standard deviation and annualized returns of the portfolio.
     """
+    returns = np.sum(mean_returns*weights ) * 252
+    std = np.sqrt(np.dot(weights.T, np.dot(cov_matrix, weights))) * np.sqrt(252)
+    return std, returns
+
+def neg_sharpe_ratio(weights, mean_returns, cov_matrix, risk_free_rate):
+    """Calculate the negative Sharpe Ratio of a portfolio."""
+    p_var, p_ret = portfolio_annualized_performance(weights, mean_returns, cov_matrix)
+    return -(p_ret - risk_free_rate) / p_var
+
+def generate_portfolios(mean_returns, cov_matrix, num_portfolios, risk_free_rate, **kwargs):
+    """
+    Generates a specified number of portfolios with random weights and calculates their performance metrics.
     
-    x = cvx.Variable(len(mean_returns))
-
-    objective = cvx.Minimize(cvx.sqrt(cvx.quad_form(x, cov_matrix)))
-    constraints = [cvx.sum(x) == 1, x >= 0]  # Including a long-only constraint
-    problem = cvx.Problem(objective, constraints)
-    problem.solve(qcp=True, solver=cvx.ECOS)
-
-    if problem.status not in [cvx.OPTIMAL, cvx.OPTIMAL_INACCURATE]:
-        raise ValueError("Optimization failed.")
-
-    minimized_volatility = problem.value
-    optimal_weights = x.value
-
-    return optimal_weights, minimized_volatility
-
-
-def optimize_twoasset_portfolio(varA, varB, correlation):
+    Parameters:
+        mean_returns (numpy.ndarray): Array of mean returns for each asset.
+        cov_matrix (numpy.ndarray): Covariance matrix of asset returns.
+        num_portfolios (int): Number of portfolios to generate.
+        risk_free_rate (float): Risk-free rate of return.
+        **kwargs: Additional keyword arguments.
+        
+    Returns:
+        numpy.ndarray: Array of portfolio performance metrics, including standard deviation, return, and Sharpe ratio.
     """
-    Optimize a portfolio with two assets.
+    num_assets = kwargs.get('num_assets', 1000)
 
-    Parameters
-    ----------
-    varA : float
-        Variance of asset A.
-    varB : float
-        Variance of asset B.
-    correlation : float
-        Correlation between asset A and B.
+    results = np.zeros((3, num_portfolios))
+    for i in range(num_portfolios):
+        weights = np.random.random(num_assets)
+        weights /= np.sum(weights)
+        portfolio_std, portfolio_return = portfolio_annualized_performance(weights, mean_returns, cov_matrix)
+        results[0,i] = portfolio_std
+        results[1,i] = portfolio_return
+        results[2,i] = (portfolio_return - risk_free_rate) / portfolio_std
+    return results
 
-    Returns
-    -------
-    optimal_weights : np.ndarray
-        Optimal weights of asset A and B.
-    minimized_variance : float
-        Variance of the optimized portfolio.
-    """
-    return portfolio_variance(varA, varB, correlation)
 
 class PortfolioOptimization:
     """

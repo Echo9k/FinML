@@ -81,7 +81,7 @@ def moving_average(adj_close, volume, window_sizes, include_stats=False, log_sca
 
     # Plot moving averages
     for window in window_sizes:
-        moving_average = product.rolling(window=window).mean()
+        moving_average = product.rolling(window=window, min_periods=1).mean()
         ax.plot(moving_average, label=f'Moving Average ({window} days)', linewidth=1.2)
 
     if include_stats:
@@ -154,4 +154,19 @@ def partial_autocorrelation(series, title, lags=40):
     plot_pacf(series, lags=lags, ax=ax)
     ax.set_title(f'Partial Autocorrelation for {title}')
     plt.tight_layout()
+    plt.show()
+
+
+def efficient_frontier(random_portfolios, optimal_volatility, optimal_return):
+    plt.figure(figsize=(10, 6))
+    plt.scatter(random_portfolios[0,:], random_portfolios[1,:], c=random_portfolios[2,:], cmap='YlGnBu', marker='o')
+    plt.title('Efficient Frontier with Selected Assets')
+    plt.xlabel('Annualized Volatility')
+    plt.ylabel('Annualized Returns')
+    plt.colorbar(label='Sharpe Ratio')
+
+    # Plotting the optimized portfolio
+    plt.scatter(optimal_volatility, optimal_return, marker='*', color='r', s=100, label='Optimized Portfolio')
+    plt.legend()
+
     plt.show()
