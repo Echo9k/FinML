@@ -19,99 +19,113 @@ def __clean_column_names(columns):
     return [col.split('. ')[1] if '. ' in col else col for col in columns]
 
 
-def normalize_col(data):
-    """Normalizes a pandas series by scaling the data between 0 and 1.
-
-    Args:
-        data (pd.Series): The input pandas series to normalize.
-
-    Returns:
-        pd.Series: Normalized pandas series.
-
-    Examples:
-        >>> normalize_col(pd.Series([1, 2, 3, 4, 5]))
-    """
-    min_val = data.min()
-    max_val = data.max()
-    return (data - min_val) / (max_val - min_val)
-
-
-def normalize_dataframe(dataframe, columns=None):
-    """Normalizes specified columns of a DataFrame.
-
-    Args:
-        dataframe (pd.DataFrame): The dataframe to normalize.
-        columns (list of str, optional): List of column names to normalize. Defaults to None, in which case all numeric columns are normalized.
-
-    Returns:
-        pd.DataFrame: DataFrame with normalized columns.
-
-    Examples:
-        >>> df = pd.DataFrame({'A': [1, 2, 3], 'B': [4, 5, 6]})
-        >>> normalize_dataframe(df, ['A'])
-    """
-    if columns is None:
-        numeric_cols = dataframe.select_dtypes(include=[np.number]).columns.tolist()
-    else:
-        numeric_cols = columns
-    dataframe[numeric_cols] = dataframe[numeric_cols].apply(normalize_col)
-    return dataframe
-
-
-class FeatureGenerator:
-    """Class for generating features from stock price data."""
-
+class DataNormalization:
     @staticmethod
-    def calculate_returns(data, column='Adj Close', log=True):
+    def normalize_col(data):
         """
-        Calculate simple and logarithmic returns for all tickers in the DataFrame.
+        Normalizes a pandas series by scaling the data between 0 and 1.
 
-        Parameters:
-        data (pandas.DataFrame): DataFrame with 'Adj Close' as one of the columns
-                                 containing adjusted close prices for each ticker.
+        Args:
+            data (pd.Series): The input pandas series to normalize.
 
         Returns:
-        pandas.DataFrame: Updated DataFrame including 'return' and 'log_return'
-                          for each ticker.
+            pd.Series: Normalized pandas series.
         """
-        is_multiindex = FeatureGenerator._is_multiindex(data)
-        FeatureGenerator._check_column(data, column, is_multiindex)
-        return FeatureGenerator._compute_returns(data,
-                                                 column=column,
-                                                 log=log,
-                                                 is_multiindex=is_multiindex)
+        min_val = data.min()
+        max_val = data.max()
+        return (data - min_val) / (max_val - min_val)
 
     @staticmethod
-    def _is_multiindex(data):
-        """Check if the DataFrame has MultiIndex columns."""
+    def normalize_dataframe(dataframe, columns=None):
+        """
+        Normalizes specified columns of a DataFrame.
+
+        Args:
+            dataframe (pd.DataFrame): The dataframe to normalize.
+            columns (list of str, optional): List of column names to normalize.
+                                             Defaults to None, normalizing all numeric columns.
+
+        Returns:
+            pd.DataFrame: DataFrame with normalized columns.
+        """
+        if columns is None:
+            numeric_cols = dataframe.select_dtypes(include=[np.number]).columns.tolist()
+        else:
+            numeric_cols = columns
+        dataframe[numeric_cols] = dataframe[numeric_cols].apply(DataNormalization.normalize_col)
+        return dataframe
+
+
+class FinancialDataProcessor:
+    @staticmethod
+    def _laplace_smoothing(data, smoothing_factor=1):
+        return (data + smoothing_factor) / (data.sum() + smoothing_factor * len(data.unique()))
+
+    @staticmethod
+    def _compute_returns(data, column, log, apply_smoothing, smoothing_factor):
+        try:
+            # Ensure 'data' is a separate DataFrame to avoid SettingWithCopyWarning
+            data = data.copy()  
+
+            if column not in data.columns:
+                raise ValueError(f"Column '{column}' not found in DataFrame.")
+
+            adj_close = data[column]
+            # Use .loc for setting new columns
+            data.loc[:, 'returns'] = adj_close / adj_close.shift(1) - 1
+            if log:
+                data.loc[:, 'log_returns'] = np.log(adj_close / adj_close.shift(1))
+
+            if apply_smoothing:
+                data.loc[:, 'returns'] = FinancialDataProcessor._laplace_smoothing(data['returns'], smoothing_factor=smoothing_factor)
+                if log:
+                    data.loc[:, 'log_returns'] = FinancialDataProcessor._laplace_smoothing(data['log_returns'], smoothing_factor=smoothing_factor)
+            return data
+        except Exception as e:
+            print(f"An error occurred: {e}")
+        
+
+    @staticmethod
+    def compute_returns(data, column='Adj Close', log=True, apply_smoothing=True, smoothing_factor=1):
+        """
+        Compute and insert simple and logarithmic returns with optional Laplace smoothing/correction.
+
+        Args:
+            data (pandas.DataFrame): DataFrame with stock price data.
+            column (str): Name of the column to compute returns on. Defaults to 'Adj Close'.
+            log (bool): If True, computes logarithmic returns. Defaults to True.
+            apply_smoothing (bool): If True, applies Laplace smoothing. Defaults to False.
+            smoothing_factor (int): Smoothing factor for Laplace smoothing. Defaults to 1.
+
+        Returns:
+            pandas.DataFrame: DataFrame with computed returns.
+        """
+        if FinancialDataProcessor.is_multiindex(data):
+            # Assuming 'data' is a DataFrame where each column represents a ticker's 'colums' (price | Adj Close) data
+            returns = {}
+            for ticker in data.columns.get_level_values(0).unique(): 
+                ticker_data = data.xs(ticker, level=0, axis=1)  # Adjust 'level' as needed
+                returns[ticker] = FinancialDataProcessor._compute_returns(ticker_data, column=column, log=True, apply_smoothing=True, smoothing_factor=1)
+
+            # Concatenate all returns DataFrames along the columns
+            return pd.concat(returns, axis=1)
+
+    @staticmethod
+    def is_multiindex(data):
+        """
+        Check if the DataFrame has MultiIndex columns.
+        """
         return isinstance(data.columns, pd.MultiIndex)
 
     @staticmethod
-    def _check_column(data, column, is_multiindex):
-        """Ensure the specified column is present in the DataFrame."""
-        if is_multiindex and column not in data.columns.get_level_values(0):
+    def check_column(data, column):
+        """
+        Ensure the specified column is present in the DataFrame.
+        """
+        if FinancialDataProcessor.is_multiindex(data) and column not in data.columns.get_level_values(0):
             raise ValueError(f"'{column}' column not found in the DataFrame")
-        if not is_multiindex and column not in data.columns:
+        if not FinancialDataProcessor.is_multiindex(data) and column not in data.columns:
             raise ValueError(f"'{column}' column not found in the DataFrame")
-
-    @staticmethod
-    def _compute_returns(data, column, log, is_multiindex):
-        """Compute and insert simple and logarithmic returns."""
-        if is_multiindex:
-            adj_close = data[column]
-            simple_returns = adj_close / adj_close.shift(1) - 1
-            if log: log_returns = np.log(adj_close / adj_close.shift(1))
-
-            for ticker in adj_close.columns: 
-                data[('returns', ticker)] = simple_returns[ticker]
-                if log: data[('log_returns', ticker)] = log_returns[ticker]
-                
-        else:
-            adj_close = data[column]
-            data['returns'] = adj_close / adj_close.shift(1) - 1
-            if log: data['log_returns'] = np.log(adj_close / adj_close.shift(1))
-
-        return data.sort_index(axis=1) if is_multiindex else data
 
 
 class PriceAdjuster:
