@@ -82,7 +82,7 @@ def moving_average(adj_close, volume, window_sizes, include_stats=False, log_sca
 
     # Plot moving averages
     for window in window_sizes:
-        moving_average = product.rolling(window=window).mean()
+        moving_average = product.rolling(window=window, min_periods=1).mean()
         ax.plot(moving_average, label=f'Moving Average ({window} days)', linewidth=1.2)
 
     if include_stats:
@@ -113,13 +113,8 @@ def adj_close_volume(data, columns:list, ticker=None, y_log=False, ax=None):
         data = data[ticker]
 
     # Plot the adjusted close price and volume
-    fig, ax = plt.subplots(2, 1, figsize=(15, 10))
-    ax[0].set_title(f'{ticker} Adj Close')
-    ax[0].set_ylabel('Price $')
-    if y_log:
-        ax[0].set_yscale('log')
-    ax[0].plot(adj_close, color='tab:blue', label='Adj Close', linewidth=1.5, linestyle='-', alpha=0.8)
-    ax[0].grid(True, axis='y', linestyle='--', alpha=0.5, linewidth=0.5)
+    if ax is None:
+        fig, ax = plt.subplots(len(columns), 1, figsize=(15, 5 * len(columns)))
 
     for i, column in enumerate(columns):
         if ticker:

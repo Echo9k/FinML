@@ -12,6 +12,52 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
+def validate_data(data, tickers, start_date, check_outliers=True, max_outlier_value=1000):
+    """
+    Validate the financial data DataFrame for multiple tickers.
+
+    Parameters:
+    data (pd.DataFrame): The financial data to be validated.
+    tickers (list): List of ticker symbols for specific validations.
+    start_date (str): Start date for the data range check.
+    check_outliers (bool): Whether to check for outliers.
+    max_outlier_value (float): Maximum value to consider for outlier detection.
+
+    Raises:
+    AssertionError: If any of the validations fail.
+    """
+
+    # Check for missing values
+    assert data.isna().sum().sum(), "Missing values detected."
+
+    # Check data types for index
+    assert data.index.dtype == 'datetime64[ns]', "Index is not in datetime format."
+
+    # Check for duplicates in index
+    assert data.index.is_unique, "Duplicates in index detected."
+
+    # Check for duplicates in columns
+    assert data.columns.is_unique, "Duplicates in columns detected."
+
+    # Check for duplicates in data
+    assert not data.duplicated().sum(), "Duplicates in data detected."
+
+    # Check data range
+    assert data.index.min() > pd.Timestamp(start_date), "Data outside the expected range."
+
+    for ticker in tickers:
+        # Validate for each ticker if it exists in the DataFrame
+        if ('Adj Close', ticker) in data.columns:
+            ticker_data = data['Adj Close'][ticker]
+
+            # Check data integrity
+            assert ticker_data.min() > 0, f"Data integrity issue detected in {ticker}."
+
+            # Check data format
+            assert pd.api.types.is_float_dtype(ticker_data), f"Incorrect data format in {ticker}."
+        else:
+            raise ValueError(f"Ticker '{ticker}' not found in the DataFrame.")
+
 class DataDownloaderBase:
     """Base class for downloading data from different financial data APIs."""
 
@@ -31,8 +77,15 @@ class DataDownloaderBase:
 
     def save_data(self, data: pd.DataFrame, ticker: str) -> None:
         """Saves downloaded data to a local file in Parquet format."""
-        filename = os.path.join(self.data_directory, f"{ticker}.parquet")
-        data.to_parquet(filename, compression='brotli')
+        filename_mkr = lambda ticker: os.path.join(self.data_directory, f"{ticker}.parquet")
+
+        if isinstance(data.columns, pd.MultiIndex):
+            data = data.swaplevel(i=-2, j=-1, axis=1).sort_index(axis=1)
+            [data[ticker].to_parquet(f"../data/raw/{ticker}.parquet", compression="brotli")
+                for ticker in data.columns.get_level_values(0).unique()]
+        elif isinstance(data, pd.DataFrame):
+            data.to_parquet(filename_mkr(ticker), compression='brotli')
+
 
 
     def get_tickers_data(self, tickers: list[str]) -> dict:
