@@ -74,9 +74,23 @@ class FeatureGenerator:
         pandas.DataFrame: Updated DataFrame including 'return' and 'log_return'
                           for each ticker.
         """
-        is_multiindex = FeatureGenerator._is_multiindex(data)
-        FeatureGenerator._check_column(data, column, is_multiindex)
-        return FeatureGenerator._compute_returns(data, column, is_multiindex)
+        if FinancialDataProcessor.is_multiindex(data):
+            # Assuming 'data' is a DataFrame where each column represents a ticker's 'colums' (price | Adj Close) data
+            returns = {}
+            for ticker in data.columns.get_level_values(0).unique(): 
+                ticker_data = data.xs(ticker, level=0, axis=1)  # Adjust 'level' as needed
+                returns[ticker] = FinancialDataProcessor._compute_returns(ticker_data, column=column,
+                                                                          log=log,
+                                                                          apply_smoothing=apply_smoothing,
+                                                                          smoothing_factor=smoothing_factor)
+
+            # Concatenate all returns DataFrames along the columns
+            return pd.concat(returns, axis=1)
+        else:
+            return FinancialDataProcessor._compute_returns(data, column=column,
+                                                           log=log,
+                                                           apply_smoothing=apply_smoothing,
+                                                           smoothing_factor=smoothing_factor)
 
     @staticmethod
     def _is_multiindex(data):

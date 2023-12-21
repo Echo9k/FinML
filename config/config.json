@@ -1,7 +1,7 @@
 {
     "General": {
-        "project_name": "Two stopck portafolio optimization",
-        "project_description": "Optimize a two stock portafolio",
+        "project_name": "Time series analisis and prediction",
+        "project_description": "Time series analisis and prediction using traditional and deep learning models",
         "project_author": "Guillermo Alcantara",
         "project_author_email": "",
         "project_url": "",
@@ -38,8 +38,7 @@
     "data_source": "yahoo",
     "data_source_params": {
         "tickers": [
-            "T",
-            "VZ"
+            "AAPL"
         ],
         "start_date": "2021-01-01",
         "end_date": "2024-12-31",
