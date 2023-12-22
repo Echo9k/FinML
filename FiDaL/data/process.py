@@ -19,6 +19,12 @@ def __clean_column_names(columns):
     return [col.split('. ')[1] if '. ' in col else col for col in columns]
 
 
+def split_sequence(sequence, n_steps):
+    X = [sequence[i:i+n_steps] for i in range(len(sequence)-n_steps)]
+    y = sequence[n_steps:]
+    return np.array(X), np.array(y)
+
+
 class DataNormalization:
     @staticmethod
     def normalize_col(data):
