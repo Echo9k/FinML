@@ -1,0 +1,48 @@
+{
+    "General": {
+        "project_name": "Time series analisis and prediction",
+        "project_description": "Time series analisis and prediction using traditional and deep learning models",
+        "project_author": "Guillermo Alcantara",
+        "project_author_email": "",
+        "project_url": "",
+        "project_version": "0.0.1",
+        "project_license": "MIT",
+        "project_year": "2023",
+        "project_keywords": [
+            "stock",
+            "portafolio",
+            "optimization"
+        ],
+        "project_classifiers": [
+            "Development Status :: 2 - Pre-Alpha",
+            "Intended Audience :: Developers",
+            "License :: OSI Approved :: MIT License",
+            "Programming Language :: Python :: 3.11",
+            "Topic :: Software Development :: Build Tools",
+            "Topic :: Software Development :: Libraries :: Python Modules",
+            "Topic :: Software Development :: Testing",
+            "Topic :: Utilities"
+        ]},
+    "paths": {
+        "data": "../data/",
+        "data.raw": "../data/",
+        "data.interim": "../data/",
+        "data.processed": "../data/",
+        "logs": "../logs/",
+        "models": "../models/",
+        "results": "../results/",
+        "scripts": "../scripts/",
+        "src": "../src/",
+        "tests": "../tests/"
+    },
+    "data_source": "yahoo",
+    "data_source_params": {
+        "tickers": [
+            "AAPL"
+        ],
+        "start_date": "2021-01-01",
+        "end_date": "2024-12-31",
+        "interval": "1d"
+    },
+    "risk_free_rate": 0.02
+}
